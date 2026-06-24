@@ -1,0 +1,8 @@
+.idea
+.DS_Store
+.env*
+secrets.yaml
+data/
+.venv/
+__pycache__/
+*.pyc

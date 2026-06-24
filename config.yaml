@@ -1,0 +1,50 @@
+search:
+  keywords:
+    - devops
+    - "linux administrator"
+    - "системный администратор linux"
+    - sre
+    - infra
+    - kubernetes
+
+  stopwords:
+    - 1с
+    - бухгалтер
+    - менеджер
+    - продавец
+    - windows
+
+  cities:
+    - name: Москва
+      hh_area_id: "1"
+    - name: Санкт-Петербург
+      hh_area_id: "2"
+
+  remote_only: true
+  days_back: 7        # брать вакансии не старше N дней (0 = без ограничения)
+  schedule:
+    full_time: true
+    part_time: true
+
+sources:
+  hh:
+    enabled: true
+    use_api: false       # переключи на true когда получишь OAuth токен
+    api_token: ""
+  habr:
+    enabled: true
+  trudvsem:
+    enabled: true
+  superjob:
+    enabled: true
+    api_key: ""          # добавь ключ в secrets.yaml: sources.superjob.api_key
+  geekjob:
+    enabled: true
+
+dedup:
+  db_path: data/seen_jobs.db
+  ttl_days: 30
+
+logging:
+  level: INFO
+  file: data/scraper.log
