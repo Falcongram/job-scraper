@@ -40,6 +40,11 @@ sources:
     api_key: ""          # добавь ключ в secrets.yaml: sources.superjob.api_key
   geekjob:
     enabled: true
+  telegram:
+    enabled: true
+    channels:
+      - fordevops
+      - devopssjob
 
 dedup:
   db_path: data/seen_jobs.db

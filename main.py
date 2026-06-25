@@ -1,5 +1,6 @@
 import argparse
 import logging
+import logging.handlers
 import sys
 import yaml
 from pathlib import Path
@@ -9,6 +10,8 @@ from scrapers.habr import HabrScraper
 from scrapers.trudvsem import TrudvsemScraper
 from scrapers.superjob import SuperjobScraper
 from scrapers.geekjob import GeekjobScraper
+from scrapers.tg_fordevops import ForDevopsScraper
+from scrapers.tg_devopssjob import DevopsJobScraper
 from filter import apply_filters
 from storage import Storage
 from notifier import send_digest, send_error
@@ -44,7 +47,9 @@ def setup_logging(config: dict):
 
     handlers = [
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(log_file, encoding="utf-8"),
+        logging.handlers.RotatingFileHandler(
+            log_file, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
+        ),
     ]
     logging.basicConfig(
         level=level,
@@ -90,6 +95,12 @@ def main():
         scrapers.append(("superjob.ru", SuperjobScraper(config)))
     if sources.get("geekjob", {}).get("enabled"):
         scrapers.append(("geekjob.ru", GeekjobScraper(config)))
+    tg_cfg = sources.get("telegram", {})
+    if tg_cfg.get("enabled"):
+        if "fordevops" in tg_cfg.get("channels", []):
+            scrapers.append(("t.me/fordevops", ForDevopsScraper(config)))
+        if "devopssjob" in tg_cfg.get("channels", []):
+            scrapers.append(("t.me/devopssjob", DevopsJobScraper(config)))
 
     all_jobs = []
     failed_sources = []
