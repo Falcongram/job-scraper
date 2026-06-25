@@ -1,6 +1,18 @@
 # job-scraper
 
-A Python scraper that aggregates remote DevOps/SRE job postings from Russian job boards, filters them by keywords, deduplicates, and sends a Telegram digest.
+> Configurable IT job scraper, pre-configured for DevOps/SRE.
+> Aggregates remote vacancies from Russian job boards, filters by keywords, deduplicates, and sends a Telegram digest.
+
+**[Документация на русском → README.ru.md](README.ru.md)**
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
+## What it does
+
+- Fetches fresh vacancies from multiple sources on a schedule
+- Filters by your keywords and stopwords (fully configurable)
+- Removes already-seen jobs (SQLite, 30-day TTL)
+- Sends a grouped digest to a Telegram chat or channel
 
 ## Sources
 
@@ -8,45 +20,17 @@ A Python scraper that aggregates remote DevOps/SRE job postings from Russian job
 |---|---|
 | hh.ru | HTML scraping (curl-cffi with browser TLS) |
 | career.habr.com | HTML scraping (curl-cffi) |
-| trudvsem.ru | Public REST API (no token required) |
+| trudvsem.ru | Public REST API (no token) |
 | superjob.ru | REST API v2.0 (API key required) |
 | geekjob.ru | HTML scraping with SSR pagination |
+| Telegram channels | Public web preview (`t.me/s/channel`) — no auth required |
 
-## How it works
-
-1. Each scraper fetches vacancies from its source (respecting `days_back` cutoff)
-2. `filter.py` keeps only jobs matching at least one keyword with no stopwords in the title
-3. `storage.py` removes already-seen jobs (SQLite, 30-day TTL)
-4. `notifier.py` formats a grouped digest and sends it to Telegram
-
-## Project structure
-
-```
-job-scraper/
-├── main.py          # entry point
-├── config.yaml      # search settings, sources, dedup config
-├── secrets.yaml     # tokens and keys (not in git)
-├── models.py        # Job dataclass
-├── filter.py        # keyword/stopword filtering
-├── storage.py       # SQLite deduplication
-├── notifier.py      # Telegram formatting and delivery
-├── scrapers/
-│   ├── base.py      # BaseScraper abstract class
-│   ├── hh.py
-│   ├── habr.py
-│   ├── trudvsem.py
-│   ├── superjob.py
-│   └── geekjob.py
-└── data/            # runtime data, not in git
-    ├── seen_jobs.db
-    └── scraper.log
-```
-
-## Setup
+## Quick start
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+git clone https://github.com/falcongram/job-scraper.git
+cd job-scraper
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -54,57 +38,54 @@ Create `secrets.yaml` (never commit this):
 
 ```yaml
 telegram:
-  token: "BOT_TOKEN"    # from @BotFather
-  chat_id: "CHAT_ID"    # from @userinfobot
+  token: "BOT_TOKEN"   # from @BotFather
+  chat_id: "CHAT_ID"   # from @userinfobot
 
 sources:
   superjob:
-    api_key: "YOUR_KEY"  # from superjob.ru/api/
+    api_key: "YOUR_KEY"
 ```
 
-Edit `config.yaml` to set your keywords, stopwords, and toggle sources on/off.
-
-## Usage
+Edit `config.yaml` — set your `keywords` and toggle sources. Then run:
 
 ```bash
-python main.py                    # normal run
-python main.py --no-dedup         # skip deduplication (debug)
-python main.py --no-send          # dry run, log only
-python main.py --no-dedup --no-send
+python main.py
+python main.py --no-dedup --no-send  # dry run for testing
 ```
 
-## Config reference
+## Automation (cron)
+
+```
+0 9 * * * cd /path/to/job-scraper && .venv/bin/python main.py >> data/cron.log 2>&1
+```
+
+## Configuration
+
+Keywords and stopwords in `config.yaml` are the only thing you need to change for a different role:
 
 ```yaml
 search:
-  keywords: [devops, sre, kubernetes]
+  keywords: [devops, sre, kubernetes]   # replace with your stack
   stopwords: [windows, 1с, менеджер]
   remote_only: true
-  days_back: 7          # 0 = no date limit
-
-sources:
-  hh:
-    enabled: true
-    use_api: false      # set true + hh_api_token in secrets.yaml for official API
-  superjob:
-    enabled: true
-    api_key: ""         # set via secrets.yaml
-
-dedup:
-  db_path: data/seen_jobs.db
-  ttl_days: 30
+  days_back: 7
 ```
 
-## Adding a new source
+The default config ships with a DevOps/SRE profile. Swap the keywords for `python developer`, `data engineer`, `qa automation`, etc.
 
-1. Create `scrapers/newsite.py` extending `BaseScraper`
-2. Implement `parse(self) -> List[Job]`
-3. Wire it in `main.py` following the existing pattern
-4. Add an entry under `sources:` in `config.yaml`
+## Contributing
 
-## Dependencies
+Pull requests are welcome. Areas where contributions are especially valuable:
 
-- `curl-cffi` — browser-grade TLS fingerprinting (bypasses bot detection)
-- `beautifulsoup4` + `lxml` — HTML parsing
-- `requests` — plain HTTP for REST APIs
-- `pyyaml` — config parsing
+- **International job boards** — LinkedIn, Greenhouse, Lever, Ashby (the filter/dedup/notifier stack is board-agnostic)
+- **New Telegram channels** — see `scrapers/tg_fordevops.py` as a reference implementation
+
+For larger changes, open an issue first.
+
+## License
+
+GNU General Public License v3.0 — see [LICENSE](LICENSE).
+
+## Author
+
+[github.com/falcongram](https://github.com/falcongram)
