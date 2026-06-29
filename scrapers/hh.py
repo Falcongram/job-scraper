@@ -4,6 +4,7 @@ from curl_cffi import requests
 from bs4 import BeautifulSoup
 from models import Job
 from scrapers.base import BaseScraper
+from scrapers.hh_auth import get_valid_token
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,15 @@ class HHScraper(BaseScraper):
 
     def parse(self) -> List[Job]:
         cfg = self.config["sources"]["hh"]
-        if cfg.get("use_api") and cfg.get("api_token"):
-            return self._parse_api(cfg["api_token"])
+        if cfg.get("use_api"):
+            client_id = cfg.get("client_id", "")
+            client_secret = cfg.get("client_secret", "")
+            if not client_id or not client_secret:
+                logger.warning("hh.ru API: нет client_id/client_secret в secrets.yaml, fallback на HTML")
+                return self._parse_html()
+            user_agent = cfg.get("user_agent", "job-scraper/1.0")
+            token = get_valid_token(client_id, client_secret, user_agent)
+            return self._parse_api(token, user_agent)
         return self._parse_html()
 
     # ------------------------------------------------------------------ HTML
@@ -113,12 +121,11 @@ class HHScraper(BaseScraper):
         return jobs
 
     # ------------------------------------------------------------------ API
-    def _parse_api(self, token: str) -> List[Job]:
-        """Заготовка для перехода на официальный API hh.ru."""
+    def _parse_api(self, token: str, user_agent: str) -> List[Job]:
         import requests as req
         jobs: List[Job] = []
         keywords = self.config["search"]["keywords"]
-        schedules = self._build_schedule_params()
+        employment = self._build_schedule_params()
 
         for city in self.cities:
             for keyword in keywords:
@@ -128,13 +135,15 @@ class HHScraper(BaseScraper):
                     "schedule": "remote",
                     "per_page": 50,
                 }
+                if employment:
+                    params["employment"] = employment
                 try:
                     resp = req.get(
                         "https://api.hh.ru/vacancies",
                         params=params,
                         headers={
                             "Authorization": f"Bearer {token}",
-                            "HH-User-Agent": "job-scraper/1.0",
+                            "HH-User-Agent": user_agent,
                         },
                         timeout=15,
                     )
@@ -164,7 +173,7 @@ class HHScraper(BaseScraper):
         return jobs
 
     def _build_schedule_params(self) -> List[str]:
-        sched = self.config["search"].get("schedule", {})
+        sched = self.config["sources"]["hh"].get("schedule", {})
         result = []
         if sched.get("full_time"):
             result.append("full")

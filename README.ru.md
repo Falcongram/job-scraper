@@ -9,7 +9,7 @@
 
 | Сайт | Метод |
 |---|---|
-| hh.ru | HTML (curl-cffi с имитацией браузерного TLS) |
+| hh.ru | REST API (OAuth2, токен обновляется автоматически) |
 | career.habr.com | HTML (curl-cffi) |
 | trudvsem.ru | Публичный REST API (без токена) |
 | superjob.ru | REST API v2.0 (нужен API-ключ) |
@@ -37,6 +37,7 @@ job-scraper/
 ├── scrapers/
 │   ├── base.py              # базовый класс BaseScraper
 │   ├── hh.py
+│   ├── hh_auth.py           # OAuth2 токен hh.ru (кеш + автообновление)
 │   ├── habr.py
 │   ├── trudvsem.py
 │   ├── superjob.py
@@ -65,6 +66,10 @@ telegram:
   chat_id: "CHAT_ID"   # узнать через @userinfobot
 
 sources:
+  hh:
+    client_id: "..."     # dev.hh.ru/admin
+    client_secret: "..."
+    user_agent: "job-scraper/1.0 (your@email.com)"
   superjob:
     api_key: "YOUR_KEY"  # с superjob.ru/api/
 ```
@@ -102,10 +107,12 @@ search:
 sources:
   hh:
     enabled: true
-    use_api: false      # true + hh_api_token в secrets.yaml для официального API
+    use_api: true       # false = HTML-парсинг (без credentials)
+    schedule:           # фильтр занятости, только для hh.ru
+      full_time: true
+      part_time: true
   superjob:
     enabled: true
-    api_key: ""         # задаётся через secrets.yaml
   telegram:
     enabled: true
     channels:

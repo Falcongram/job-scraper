@@ -18,7 +18,7 @@
 
 | Site | Method |
 |---|---|
-| hh.ru | HTML scraping (curl-cffi with browser TLS) |
+| hh.ru | REST API (OAuth2, token auto-refreshed) |
 | career.habr.com | HTML scraping (curl-cffi) |
 | trudvsem.ru | Public REST API (no token) |
 | superjob.ru | REST API v2.0 (API key required) |
@@ -42,6 +42,10 @@ telegram:
   chat_id: "CHAT_ID"   # from @userinfobot
 
 sources:
+  hh:
+    client_id: "..."     # dev.hh.ru/admin
+    client_secret: "..."
+    user_agent: "job-scraper/1.0 (your@email.com)"
   superjob:
     api_key: "YOUR_KEY"
 ```

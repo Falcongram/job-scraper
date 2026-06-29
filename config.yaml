@@ -1,5 +1,5 @@
 search:
-  keywords:
+  keywords:          # искать вакансии с этими словами в названии
     - devops
     - "linux administrator"
     - "системный администратор linux"
@@ -7,37 +7,35 @@ search:
     - infra
     - kubernetes
 
-  stopwords:
+  stopwords:         # исключить вакансии, где в названии есть эти слова
     - 1с
     - бухгалтер
     - менеджер
     - продавец
     - windows
 
-  cities:
+  cities:            # города поиска; hh_area_id — ID региона в hh.ru
     - name: Москва
       hh_area_id: "1"
     - name: Санкт-Петербург
       hh_area_id: "2"
 
-  remote_only: true
-  days_back: 7        # брать вакансии не старше N дней (0 = без ограничения)
-  schedule:
-    full_time: true
-    part_time: true
+  remote_only: true  # зарезервировано, фактически remote задаётся через schedule на hh
+  days_back: 7       # брать вакансии не старше N дней (0 = без ограничения)
 
-sources:
+sources:             # включить/выключить источники
   hh:
     enabled: true
-    use_api: false       # переключи на true когда получишь OAuth токен
-    api_token: ""
+    use_api: true    # true = официальный API (нужны client_id/secret в secrets.yaml), false = HTML-парсинг
+    schedule:        # только hh.ru; другие источники этот фильтр не поддерживают
+      full_time: false
+      part_time: true
   habr:
     enabled: true
   trudvsem:
     enabled: true
   superjob:
-    enabled: true
-    api_key: ""          # добавь ключ в secrets.yaml: sources.superjob.api_key
+    enabled: false  # очень мало для Devops
   geekjob:
     enabled: true
   telegram:
@@ -47,9 +45,9 @@ sources:
       - devopssjob
 
 dedup:
-  db_path: data/seen_jobs.db
-  ttl_days: 30
+  db_path: data/seen_jobs.db  # SQLite-база уже отправленных вакансий
+  ttl_days: 30                # через сколько дней вакансия считается «новой» снова
 
 logging:
-  level: INFO
+  level: INFO        # DEBUG / INFO / WARNING
   file: data/scraper.log
